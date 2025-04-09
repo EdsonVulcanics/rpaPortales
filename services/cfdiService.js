@@ -3,6 +3,8 @@ const StealthPlugin = require('puppeteer-extra-plugin-stealth');
 const axios = require('axios');
 const FormData = require('form-data');
 const fs = require('fs');
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+
 
 puppeteer.use(StealthPlugin());
 
@@ -42,9 +44,11 @@ const processCfdi = async (url, retryCount = 0) => {
                 '--hide-scrollbars', // Hide scrollbars like a real browser
             ]
         });
+        console.log("Browser launched", browser);
 
         const pages = await browser.pages();
         const page = pages[0];
+        console.log("Page loaded", page);
 
         // Page setup
         await page.setViewport({
@@ -62,28 +66,27 @@ const processCfdi = async (url, retryCount = 0) => {
 
         await page.goto(url);
 
-        // Wait for CAPTCHA image to load
+        // Wait for CAPTCHA image to load //ctl00_MainContent_ImgCaptcha
         const captchaSelector = '#ctl00_MainContent_ImgCaptcha';
+        console.log("Waiting for CAPTCHA image to load", captchaSelector);
         await page.waitForSelector(captchaSelector);
-
+        console.log("CAPTCHA image loaded");
         // Get the CAPTCHA image URL
         const captchaUrl = await page.$eval(captchaSelector, img => img.src);
-
+        console.log("CAPTCHA image URL", captchaUrl);
         // Download CAPTCHA image
         const captchaResponse = await axios.get(captchaUrl, { responseType: 'arraybuffer' });
-        imagePath = `captcha_${Date.now()}.png`;
-        fs.writeFileSync(imagePath, Buffer.from(captchaResponse.data)); // Save the CAPTCHA image locally
-
+        const base64Image = Buffer.from(captchaResponse.data).toString("base64");
+        // imagePath = `captcha_${Date.now()}.png`;
+        // fs.writeFileSync(imagePath, Buffer.from(captchaResponse.data)); // Save the CAPTCHA image locally
+        // console.log("CAPTCHA image downloaded", imagePath);
         // Use FormData to upload the file
-        const formData = new FormData();
-        formData.append('file', fs.createReadStream(imagePath)); // Correct way to append the file in Node.js
-
+  
         // Send the image to the TensorFlow API for solving
-        const captchaSolveResponse = await axios.post('https://www.portales.vulcanics.mx/solve_audio_captcha', formData, {
-            headers: formData.getHeaders(),
-        });
+        const captchaSolveResponse = await analyzeImage(base64Image);
+        console.log("CAPTCHA solved", captchaSolveResponse);
 
-        const captchaText = captchaSolveResponse.data.captcha_text;
+        const captchaText = captchaSolveResponse;
 
         // Fill in the CAPTCHA on the website
         await page.type('#ctl00_MainContent_TxtCaptchaNumbers', captchaText);
@@ -162,4 +165,54 @@ const processCfdi = async (url, retryCount = 0) => {
     }
 };
 
+
+async function analyzeImage(base64Image) {
+    try {
+        const response = await axios.post(
+          "https://api.openai.com/v1/chat/completions",
+          {
+            model: "gpt-4o-mini",
+            messages: [
+              {
+                role: "user",
+                content: [
+                  {
+                    type: "text",
+                    text: "¿Qué texto aparece en esta imagen de captcha? Solo responde con el texto tal cual.",
+                  },
+                  {
+                    type: "image_url",
+                    image_url: {
+                      url: `data:image/jpeg;base64,${base64Image}`,
+                    },
+                  },
+                ],
+              },
+            ],
+            max_tokens: 50,
+          },
+          {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${OPENAI_API_KEY}`,
+            },
+          }
+        );
+        console.log(response);
+      
+        console.log("Texto detectado:", response.data.choices[0].message.content);
+        return response.data.choices[0].message.content;
+        
+    } catch (error) {
+        console.error("Error OpenAI:", {
+            message: error.message,
+            details: error.response?.data || 'No additional details',
+            status: error.response?.status
+        });
+        return null;
+    }
+    
+  }
+
 module.exports = { processCfdi };
+
