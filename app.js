@@ -28,6 +28,9 @@ initializeQueue()
 
 // Routes
 app.use('/', queueRoutes);
+app.get('/ok', (req, res) => {
+    res.send('Server is running');
+});
 
 // Error handler
 app.use(errorHandler);

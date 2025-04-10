@@ -198,7 +198,6 @@ async function analyzeImage(base64Image) {
             },
           }
         );
-        console.log(response);
       
         console.log("Texto detectado:", response.data.choices[0].message.content);
         return response.data.choices[0].message.content;
