@@ -46,7 +46,7 @@ const processCfdi = async (url, retryCount = 0) => {
         });
         console.log("Browser launched", browser);
 
-        const pages = await browser.pages();
+        const pages = await browser?.pages();
         const page = pages[0];
         console.log("Page loaded", page);
 
@@ -103,7 +103,7 @@ const processCfdi = async (url, retryCount = 0) => {
             if (isErrorVisible) {
                 // Extract the error message
                 const errorMessage = await page.$eval(errorSelector, el => el.innerText);
-                await browser.close();
+                await browser?.close();
                 return { status: 'error', message: `CFDI Error: ${errorMessage.trim()}` };
             } else {
                 throw new Error('Unexpected error while waiting for results.');
@@ -132,7 +132,7 @@ const processCfdi = async (url, retryCount = 0) => {
             };
         });
 
-        await browser.close();
+        await browser?.close();
 
         // Clean up the downloaded CAPTCHA image
         try {
@@ -147,8 +147,9 @@ const processCfdi = async (url, retryCount = 0) => {
     } catch (error) {
         console.error(`Error processing CFDI on attempt ${retryCount + 1}:`, error.message);
 
-        if (browser)
-            await browser.close();
+        if (browser){
+            await browser?.close();
+        }
 
         // Clean up the downloaded CAPTCHA image
         try {

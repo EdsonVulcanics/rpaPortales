@@ -13,10 +13,9 @@ const port = process.env.PORT || 3691;
 // Middleware
 // Configuración detallada de CORS
 const corsOptions = {
-    origin: process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : '*',
+    origin: '*',
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-    credentials: true,
+    allowedHeaders: '*',
     optionsSuccessStatus: 200
 };
 app.use(cors(corsOptions));
