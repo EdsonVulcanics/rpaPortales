@@ -166,12 +166,13 @@ const processCurp = async (curp) => {
             }
         });
 
-        await page.goto('https://www.google.com', { waitUntil: 'networkidle0' });
-        await page.type('textarea[name="q"]', 'CURP site');
-        await page.keyboard.press('Enter');
-        await page.waitForSelector('h3');
-        await page.click('a[href*="gob.mx/curp"] h3');
-        await page.waitForNavigation({ waitUntil: 'networkidle0' });
+        // await page.goto('https://www.google.com', { waitUntil: 'networkidle0' });
+        // await page.type('textarea[name="q"]', 'CURP site');
+        // await page.keyboard.press('Enter');
+        // await page.waitForSelector('h3');
+        // await page.click('a[href*="gob.mx/curp"] h3');
+        //await page.waitForNavigation({ waitUntil: 'networkidle0' });
+        await page.goto('https://www.gob.mx/curp', { waitUntil: 'networkidle0' });
 
         // Step 2: Input CURP and search
         await page.waitForSelector('#curpinput', { timeout: 10000 });
